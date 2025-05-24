@@ -9,7 +9,7 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("/api/auth/forgot-password", { email });
+      await axios.post("https://booking-mern-app-724u.onrender.com/api/auth/forgot-password", { email });
       toast.success("Password reset link sent to your email.");
     } catch (err) {
       toast.error(err.response?.data?.error || "Something went wrong.");
