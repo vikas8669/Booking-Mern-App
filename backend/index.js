@@ -19,7 +19,7 @@ require("./config/db");
     app.use(
     cors({
        origin: "*",
-     origin: "http://localhost:5173", // your frontend
+     origin: "https://booking-mern-app.vercel.app", // your frontend
      credentials: true,
   })
 );
