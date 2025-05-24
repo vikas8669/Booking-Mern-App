@@ -18,6 +18,7 @@ require("./config/db");
 
     app.use(
     cors({
+       origin: "*",
      origin: "http://localhost:5173", // your frontend
      credentials: true,
   })
