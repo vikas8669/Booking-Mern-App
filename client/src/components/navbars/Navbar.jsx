@@ -1,209 +1,125 @@
 import React, { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
-import { useSearch } from "../../context/SearchContext"; // Use the context hook
+import { useSearch } from "../../context/SearchContext";
 
 const Navbar = () => {
   const { user } = useContext(AuthContext);
-  const { searchTerm, setSearchTerm } = useSearch(); // Destructure searchTerm and setSearchTerm from context
+  const { searchTerm, setSearchTerm } = useSearch();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const navigate = useNavigate();
 
-  const handleSearchChange = (event) => {
-    setSearchTerm(event.target.value.toLowerCase()); // Update search term in context
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value.toLowerCase());
   };
 
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    if (searchTerm) {
-      navigate("/"); // Or wherever you want to navigate to after search
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate("/");
+      setMenuOpen(false); // close menu on mobile after search
     }
   };
 
-  const [menuOpen, setMenuOpen] = useState(false); // State for controlling the mobile menu
-
-  const toggleMenu = () => {
-    setMenuOpen(!menuOpen); // Toggle menu on small screens
-  };
+  const navLinkClasses = ({ isActive }) =>
+    `text-lg transition duration-300 ${
+      isActive ? "text-primary font-semibold" : "text-gray-700 hover:text-primary"
+    }`;
 
   return (
-    <header className="flex justify-between items-center xl:px-20 lg:px-32 py-2 sm:px-10 md:px-5 bg-white shadow-md z-10 fixed w-full top-0 left-0">
-      {/* Logo Section */}
-      <Link
-        to="/"
-        className="flex items-center gap-2 text-2xl font-bold text-primary"
-      >
-        <img
-          className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12"
-          src="/InstaStayLogo.png"
-          alt="WanderLust Logo"
-        />
-        <span className="font-bold text-xl sm:text-lg md:text-xl lg:text-2xl xl:text-3xl text-primary hidden sm:block">
-          WanderLust
-        </span>
-      </Link>
-
-      {/* Tabs Section (Desktop) */}
-      <div className="hidden lg:flex gap-8">
-        <Link
-          to="/"
-          className="text-lg text-gray-700 hover:text-primary transition-all duration-300"
-        >
-          Home
+    <header className="fixed top-0 left-0 w-full bg-white shadow-md z-50">
+      <div className="flex justify-between items-center px-4 sm:px-8 md:px-16 lg:px-24 xl:px-32 py-3">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-primary">
+          <img
+            src="/InstaStayLogo.png"
+            alt="WanderLust Logo"
+            className="h-10 w-10"
+          />
+          <span className="block text-xl lg:text-2xl">WanderLust</span>
         </Link>
-        <Link
-          to="/aboutus"
-          className="text-lg text-gray-700 hover:text-primary transition-all duration-300"
-        >
-          About
-        </Link>
-        <Link
-          to="/contact"
-          className="text-lg text-gray-700 hover:text-primary transition-all duration-300"
-        >
-          Contact
-        </Link>
-        {user && user.isAdmin && (
-          <Link
-            to="/admin"
-            className="text-lg text-gray-700 hover:text-primary transition-all duration-300"
-          >
-            Dashboard
-          </Link>
-        )}
-      </div>
 
-      {/* Search Bar Section */}
-      <form
-        onSubmit={handleSearchSubmit}
-        className="mx-2 flex items-center gap-2 border border-gray-300 rounded-l-xl rounded-r-md md:pl-10 px-1 shadow-md"
-      >
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={handleSearchChange}
-          placeholder="Search hotels"
-          className="focus:outline-none w-full sm:w-32 md:w-48 lg:w-72 xl:w-80 sm:h-10 md:h-10 sm:text-sm md:text-base xl:text-lg sm:px-2 md:px-3 xl:px-4"
-        />
-        <button
-          type="submit"
-          className="bg-primary text-white md:p-2 p-1 m-1 rounded-full sm:text-sm md:text-base xl:text-lg"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 "
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-            />
-          </svg>
-        </button>
-      </form>
+        {/* Desktop Links */}
+        <nav className="hidden lg:flex gap-8 items-center">
+          <NavLink to="/" className={navLinkClasses}>Home</NavLink>
+          <NavLink to="/aboutus" className={navLinkClasses}>About</NavLink>
+          <NavLink to="/contact" className={navLinkClasses}>Contact</NavLink>
+          {user?.isAdmin && <NavLink to="/admin" className={navLinkClasses}>Dashboard</NavLink>}
+        </nav>
 
-      {/* Dropdown Menu (Mobile) */}
-      <div
-        className={`absolute top-16 left-0 w-full bg-white shadow-md lg:hidden ${
-          menuOpen ? "block" : "hidden"
-        }`}
-      >
-        <div className="flex flex-col gap-4 py-4 px-4">
-          <Link
-            to="/"
-            className="text-lg text-gray-700 hover:text-primary transition-all duration-300"
-            onClick={() => setMenuOpen(false)}
-          >
-            Home
-          </Link>
-          <Link
-            to="/aboutus"
-            className="text-lg text-gray-700 hover:text-primary transition-all duration-300"
-            onClick={() => setMenuOpen(false)}
-          >
-            About
-          </Link>
-          <Link
-            to="/contact"
-            className="text-lg text-gray-700 hover:text-primary transition-all duration-300"
-            onClick={() => setMenuOpen(false)}
-          >
-            Contact
-          </Link>
-          {user && user.isAdmin && (
-            <Link
-              to="/admin"
-              className="text-lg text-gray-700 hover:text-primary transition-all duration-300"
-              onClick={() => setMenuOpen(false)}
-            >
-              Dashboard
-            </Link>
-          )}
-        </div>
-      </div>
+        {/* Search bar */}
+<form
+  onSubmit={handleSearchSubmit}
+  className="flex items-center border border-gray-300 rounded-full overflow-hidden shadow-sm w-60 lg:w-80 bg-white focus-within:ring-2 focus-within:ring-primary transition"
+>
+  <input
+    type="text"
+    value={searchTerm}
+    onChange={handleSearchChange}
+    placeholder="Search hotels"
+    className="w-full px-4 py-3 text-sm text-gray-700 placeholder-gray-400 focus:outline-none"
+  />
+  <button
+    type="submit"
+    className="bg-primary hover:bg-primary-dark text-white px-4 py-3 text-sm font-medium transition-colors duration-200"
+    aria-label="Search"
+  >
+    🔍
+  </button>
+</form>
 
-      {/* Right Side (User/Account / Dashboard / Login) */}
-      <div className="flex items-center gap-2 sm:gap-4 md:gap-6">
-        {/* Mobile Hamburger Menu Button */}
-        <div className="lg:hidden flex items-center">
-          <button
-            onClick={toggleMenu}
-            className="text-gray-700 focus:outline-none p-2"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
-              />
-            </svg>
-          </button>
-        </div>
 
-        {/* Account/Login Button */}
-        <div className="relative">
+
+        {/* User Info (Desktop) */}
+        <div className="hidden lg:flex items-center">
           <Link
             to={user ? "/account" : "/login"}
-            className="flex items-center gap-2 border border-gray-300 rounded-full sm:py-2 sm:px-4 p-2 hover:bg-gray-100 transition-all duration-200"
+            className="flex items-center gap-2 border border-gray-300 rounded-full px-4 py-2 hover:bg-gray-100 transition"
           >
-            <div className="bg-gray-500 text-white rounded-full border border-gray-500 overflow-hidden flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="sm:w-6 sm:h-6 w-5 h-5"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z"
-                  clipRule="evenodd"
-                />
+            <div className="bg-gray-500 text-white p-1 rounded-full">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z" />
               </svg>
             </div>
-            {user && (
-              <div className="sm:text-sm text-xs font-semibold text-green-600">
-                {user.name}
-              </div>
-            )}
-            {!user && (
-              <div className="sm:text-sm text-xs font-semibold text-red-600">
-                Login
-              </div>
-            )}
+            <span className="text-sm font-medium text-gray-700">
+              {user ? user.name : "Login"}
+            </span>
           </Link>
         </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="lg:hidden p-2 text-gray-600"
+          aria-label="Menu"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
       </div>
+
+      {/* Mobile Dropdown */}
+      {menuOpen && (
+        <div className="lg:hidden bg-white border-t shadow-sm px-6 py-4">
+          <div className="flex flex-col gap-3">
+            <NavLink to="/" className={navLinkClasses} onClick={() => setMenuOpen(false)}>Home</NavLink>
+            <NavLink to="/aboutus" className={navLinkClasses} onClick={() => setMenuOpen(false)}>About</NavLink>
+            <NavLink to="/contact" className={navLinkClasses} onClick={() => setMenuOpen(false)}>Contact</NavLink>
+            {user?.isAdmin && (
+              <NavLink to="/admin" className={navLinkClasses} onClick={() => setMenuOpen(false)}>Dashboard</NavLink>
+            )}
+            <NavLink
+              to={user ? "/account" : "/login"}
+              className="text-lg text-gray-700 hover:text-primary font-medium"
+              onClick={() => setMenuOpen(false)}
+            >
+              {user ? user.name : "Login / Register"}
+            </NavLink>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
