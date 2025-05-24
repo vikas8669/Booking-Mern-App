@@ -53,7 +53,7 @@ app.use("/api", uploadRoutes);
 
 // Handle default route
 app.get("/", (req, res) => {
-  res.send("Hotel Booking API - Auth Service");
+  res.send("Hotel Booking API - Auth Service New");
 });
 
 
