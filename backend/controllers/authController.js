@@ -204,7 +204,7 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     // Prepare reset link
-    const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetLink = `https://booking-mern-app.vercel.app/reset-password/${resetToken}`;
 
     // Send reset email
     await sendEmail(
