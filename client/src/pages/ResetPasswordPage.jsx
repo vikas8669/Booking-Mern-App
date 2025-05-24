@@ -18,7 +18,7 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      await axios.post(`https://booking-mern-app-724u.onrender.com/api/auth/reset-password/${token}`, {
+      await axios.post(`/api/auth/reset-password/${token}`, {
         password,
         confirmPassword,
       });
