@@ -95,7 +95,7 @@ export default function BookingWidget({ hotel }) {
 
     try {
       const backendResponse = await axios.post(`${API_URL}/api/razorpay/order`, {
-        amount: totalPrice ,
+        amount: totalPrice * 100,
         currency: "INR",
       });
 
