@@ -204,7 +204,7 @@ exports.forgotPassword = async (req, res) => {
     await user.save();
 
     // Prepare reset link
-    const resetLink = `http://localhost:5173/reset-password/${resetToken}`;
+    const resetLink = `https://booking-mern-app-724u.onrender.com/reset-password/${resetToken}`;
 
     // Send reset email
     await sendEmail(
