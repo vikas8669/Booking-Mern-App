@@ -37,7 +37,7 @@ const Navbar = () => {
             alt="WanderLust Logo"
             className="h-10 w-10"
           />
-          <span className="block text-xl lg:text-2xl">WanderLust</span>
+          <span className="hidden lg:block text-xl lg:text-2xl">WanderLust</span>
         </Link>
 
         {/* Desktop Links */}
