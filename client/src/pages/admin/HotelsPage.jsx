@@ -1,466 +1,279 @@
-import React, { useContext, useEffect, useState } from "react";
-import { AuthContext } from "../../context/AuthContext";
+import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
-import PlaceImg from "../../components/PlaceImg";
+import { AuthContext } from "../../context/AuthContext";
+import PlaceImg from "../../components/PlaceImg";   
 import PhotosUploader from "../../components/PhotosUploader";
 import Perks from "../../components/Perks";
-import AdminDashboard from "../../components/navbars/AdminDashboard";
 
-import { API_URL } from "../../Config";
 const HotelsPage = () => {
-  const { user } = useContext(AuthContext);
+  const { auth } = useContext(AuthContext);
   const [hotels, setHotels] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
-    address: "",
-    photos: [],
     description: "",
+    price: "",
+    photos: [],
     amenities: [],
-    extraInfo: "",
-    checkIn: 14,
-    checkOut: 11,
-    maxGuests: 1,
-    pricePerNight: 0,
-    totalRooms: 1,
-    availableRooms: 1,
   });
-  const [editHotel, setEditHotel] = useState(null);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [selectedAmenities, setSelectedAmenities] = useState([]);
-  const [isFormVisible, setIsFormVisible] = useState(false);
+  const [editingHotelId, setEditingHotelId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [priceFilter, setPriceFilter] = useState("");
+  const [amenitiesFilter, setAmenitiesFilter] = useState("");
 
   useEffect(() => {
-    if (!user || !user.isAdmin) return;
-    const fetchHotels = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/api/admin/hotels`, {
-          withCredentials: true,
-        });
-        setHotels(response.data);
-      } catch (err) {
-        setError("Failed to fetch hotels.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchHotels();
-  }, [user]);
+  }, []);
 
-  const handleCreateHotel = () => {
-    setEditHotel(null);
-    setIsFormVisible(true);
-  };
-
-  const handleSaveHotel = () => {
-    setIsFormVisible(false);
-    setEditHotel(null);
-  };
-
-  const handleCancel = () => {
-    setIsFormVisible(false);
-    setEditHotel(null);
-  };
-
-  const handleCreateHotelSubmit = async (e) => {
-    e.preventDefault();
+  const fetchHotels = async () => {
     try {
-      const response = await axios.post(
-        `${API_URL}/api/admin/hotels`,
-        formData,
-        { withCredentials: true }
-      );
-      setHotels((prevHotels) => [...prevHotels, response.data]);
-      setFormData({
-        name: "",
-        address: "",
-        photos: [],
-        description: "",
-        amenities: [],
-        extraInfo: "",
-        checkIn: 14,
-        checkOut: 11,
-        maxGuests: 1,
-        pricePerNight: 0,
-        totalRooms: 1,
-        availableRooms: 1,
-      });
-      handleSaveHotel();
-    } catch (err) {
-      setError("Failed to create hotel.");
+      const { data } = await axios.get("/api/v1/hotel/all-hotels");
+      setHotels(data?.hotels || []);
+    } catch (error) {
+      console.error("Failed to fetch hotels", error);
     }
   };
 
-  const handleEditHotel = (hotelToEdit) => {
-    setEditHotel(hotelToEdit);
-    setFormData(hotelToEdit);
-    setIsFormVisible(true);
-  };
-
-  const handleUpdateHotel = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.put(
-       `${API_URL}/api/admin/hotels/${editHotel._id}`,
-        formData,
-        { withCredentials: true }
-      );
-      setHotels((prevHotels) =>
-        prevHotels.map((hotel) =>
-          hotel._id === editHotel._id ? { ...hotel, ...formData } : hotel
-        )
-      );
-      handleSaveHotel();
-    } catch (err) {
-      setError("Failed to update hotel.");
-    }
-  };
-
-  const handleDeleteHotel = async (id) => {
-    try {
-      await axios.delete(`${API_URL}/api/admin/hotels/${id}`, {
-        withCredentials: true,
-      });
-      setHotels((prevHotels) => prevHotels.filter((hotel) => hotel._id !== id));
-    } catch (err) {
-      setError("Failed to delete hotel.");
-    }
-  };
-
-  const handleChange = (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData({ ...formData, [name]: value });
   };
 
-  const handlePhotosChange = (photos) => {
-    console.log("Updated photos:", photos); // Debugging step
-    setFormData((prev) => ({
-      ...prev,
-      photos,
-    }));
-  };
-  
-
-  const handleAmenitiesChange = (amenities) => {
-    setFormData({
-      ...formData,
-      amenities,
-    });
+  const handlePhotoChange = (photos) => {
+    setFormData({ ...formData, photos });
   };
 
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
+  const handleAmenitiesChange = (selectedAmenities) => {
+    setFormData({ ...formData, amenities: selectedAmenities });
   };
 
-  const handlePriceChange = (e) => {
-    if (e.target.name === "minPrice") setMinPrice(e.target.value);
-    if (e.target.name === "maxPrice") setMaxPrice(e.target.value);
-  };
-
-  const handleAmenitiesFilter = (amenity) => {
-    if (selectedAmenities.includes(amenity)) {
-      setSelectedAmenities(selectedAmenities.filter((item) => item !== amenity));
-    } else {
-      setSelectedAmenities([...selectedAmenities, amenity]);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post("/api/v1/hotel/create-hotel", formData, {
+        headers: {
+          Authorization: auth?.token,
+        },
+      });
+      fetchHotels();
+      resetForm();
+    } catch (error) {
+      console.error("Failed to create hotel", error);
     }
+  };
+
+  const handleEdit = (hotel) => {
+    setEditingHotelId(hotel._id);
+    setFormData({
+      name: hotel.name,
+      description: hotel.description,
+      price: hotel.price,
+      photos: hotel.photos,
+      amenities: hotel.amenities,
+    });
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`/api/v1/hotel/update-hotel/${editingHotelId}`, formData, {
+        headers: {
+          Authorization: auth?.token,
+        },
+      });
+      fetchHotels();
+      setEditingHotelId(null);
+      resetForm();
+    } catch (error) {
+      console.error("Failed to update hotel", error);
+    }
+  };
+
+  const handleDelete = async (hotelId) => {
+    try {
+      await axios.delete(`/api/v1/hotel/delete-hotel/${hotelId}`, {
+        headers: {
+          Authorization: auth?.token,
+        },
+      });
+      fetchHotels();
+    } catch (error) {
+      console.error("Failed to delete hotel", error);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingHotelId(null);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      description: "",
+      price: "",
+      photos: [],
+      amenities: [],
+    });
   };
 
   const filteredHotels = hotels.filter((hotel) => {
-    const matchesName = hotel.name.toLowerCase().includes(search.toLowerCase());
-    const matchesPrice = hotel.pricePerNight >= (minPrice || 0) && hotel.pricePerNight <= (maxPrice || Infinity);
-    const matchesAmenities = selectedAmenities.every((amenity) => hotel.amenities.includes(amenity));
-
-    return matchesName && matchesPrice && matchesAmenities;
+    const matchesSearch = hotel.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPrice = priceFilter ? parseFloat(hotel.price) <= parseFloat(priceFilter) : true;
+    const matchesAmenities = amenitiesFilter
+      ? hotel.amenities?.includes(amenitiesFilter)
+      : true;
+    return matchesSearch && matchesPrice && matchesAmenities;
   });
 
-  if (loading) return <div>Loading...</div>;
-
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-    <div className="max-w-7xl mx-auto ">
-      <AdminDashboard/>
-      <h1 className="text-3xl font-bold mb-6 text-center">Manage Hotels</h1>
+    <div className="p-4 sm:p-6">
+      <h1 className="text-2xl font-bold mb-6 text-center sm:text-left">Manage Hotels</h1>
 
-      {/* Centered Search Bar */}
-      <div className="mb-6 flex justify-center">
+      {/* Filters */}
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-6">
         <input
           type="text"
-          value={search}
-          onChange={handleSearch}
-          placeholder="Search hotels by name"
-          className="border p-3 w-full md:w-1/2 lg:w-1/3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="Search by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="p-2 border border-gray-300 rounded-md w-full md:w-1/2"
         />
-      </div>
 
-      {/* Price Range Filter */}
-      <div className="flex justify-center space-x-4 mb-6">
-        <input
-          type="number"
-          name="minPrice"
-          value={minPrice}
-          onChange={handlePriceChange}
-          placeholder="Min Price"
-          className="border p-3 w-full md:w-1/4 lg:w-1/5 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-        <input
-          type="number"
-          name="maxPrice"
-          value={maxPrice}
-          onChange={handlePriceChange}
-          placeholder="Max Price"
-          className="border p-3 w-full md:w-1/4 lg:w-1/5 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-      </div>
-
-      {/* Amenities Filter */}
-      <div className="flex justify-center space-x-4 mb-6">
-        {["Free WiFi", "Pool", "Parking", "Restaurant"].map((amenity) => (
-          <button
-            key={amenity}
-            onClick={() => handleAmenitiesFilter(amenity)}
-            className={`p-3 rounded-full border ${selectedAmenities.includes(amenity) ? "bg-indigo-600 text-white" : "bg-white text-indigo-600"}`}
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <select
+            value={priceFilter}
+            onChange={(e) => setPriceFilter(e.target.value)}
+            className="p-2 border border-gray-300 rounded-md w-full sm:w-auto"
           >
-            {amenity}
-          </button>
-        ))}
+            <option value="">Filter by Price</option>
+            <option value="100">Under ₹100</option>
+            <option value="500">Under ₹500</option>
+            <option value="1000">Under ₹1000</option>
+          </select>
+
+          <select
+            value={amenitiesFilter}
+            onChange={(e) => setAmenitiesFilter(e.target.value)}
+            className="p-2 border border-gray-300 rounded-md w-full sm:w-auto"
+          >
+            <option value="">Filter by Amenities</option>
+            <option value="Free WiFi">Free WiFi</option>
+            <option value="Pool">Pool</option>
+            <option value="Parking">Parking</option>
+            <option value="Restaurant">Restaurant</option>
+          </select>
+        </div>
       </div>
 
-      {/* Create New Hotel Button */}
-      {!isFormVisible && (
-        <button
-          onClick={handleCreateHotel}
-          className="mb-6 py-3 px-6 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition-all duration-300"
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Hotel Form */}
+        <form
+          onSubmit={editingHotelId ? handleUpdate : handleSubmit}
+          className="bg-white p-4 rounded-md shadow-md space-y-4"
         >
-          Create New Hotel
-        </button>
-      )}
+          <h2 className="text-lg font-semibold">
+            {editingHotelId ? "Edit Hotel" : "Create Hotel"}
+          </h2>
 
-      {error && <div className="text-red-500 mb-4">{error}</div>}
+          <input
+            type="text"
+            name="name"
+            placeholder="Hotel Name"
+            value={formData.name}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md"
+            required
+          />
 
-      {/* Hotel Creation and Edit Form */}
-      {isFormVisible && (
-        <form onSubmit={editHotel ? handleUpdateHotel : handleCreateHotelSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold text-gray-700">{editHotel ? "Edit" : "Create"} Hotel</h2>
+          <textarea
+            name="description"
+            placeholder="Description"
+            value={formData.description}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md"
+            required
+          />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-gray-600">Hotel Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Hotel Name"
-              />
-            </div>
+          <input
+            type="number"
+            name="price"
+            placeholder="Price"
+            value={formData.price}
+            onChange={handleInputChange}
+            className="w-full p-2 border rounded-md"
+            required
+          />
 
-            <div>
-              <label className="block text-gray-600">Address</label>
-              <input
-                type="text"
-                name="address"
-                value={formData.address}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Hotel Address"
-              />
-            </div>
-          </div>
+          <PhotosUploader photos={formData.photos} onChange={handlePhotoChange} />
+          <Perks selected={formData.amenities} onChange={handleAmenitiesChange} />
 
-          <div>
-            <label className="block text-gray-600">Photos</label>
-            <PhotosUploader addedPhotos={formData.photos} onChange={handlePhotosChange} />
-          </div>
-
-          <div>
-            <label className="block text-gray-600">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Hotel Description"
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-600">Amenities</label>
-            <Perks selected={formData.amenities} onChange={handleAmenitiesChange} />
-          </div>
-
-          <div>
-            <label className="block text-gray-600">Extra Info</label>
-            <textarea
-              name="extraInfo"
-              value={formData.extraInfo}
-              onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Additional Info"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-gray-600">Check-In Time (24-hour format)</label>
-              <input
-                type="number"
-                name="checkIn"
-                value={formData.checkIn}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Check-in Time"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-600">Check-Out Time (24-hour format)</label>
-              <input
-                type="number"
-                name="checkOut"
-                value={formData.checkOut}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Check-out Time"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-600">Max Guests</label>
-              <input
-                type="number"
-                name="maxGuests"
-                value={formData.maxGuests}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Max Guests"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-600">Price per Night</label>
-              <input
-                type="number"
-                name="pricePerNight"
-                value={formData.pricePerNight}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Price per Night"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-600">Total Rooms</label>
-              <input
-                type="number"
-                name="totalRooms"
-                value={formData.totalRooms}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Total Rooms"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-600">Available Rooms</label>
-              <input
-                type="number"
-                name="availableRooms"
-                value={formData.availableRooms}
-                onChange={handleChange}
-                required
-                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="Available Rooms"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-between space-x-4 mt-6">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               type="submit"
-              className="w-full py-3 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md w-full sm:w-auto"
             >
-              {editHotel ? "Update Hotel" : "Save Hotel"}
+              {editingHotelId ? "Update" : "Create"}
             </button>
-
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="w-full py-3 bg-gray-600 text-white rounded-full shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300"
-            >
-              Cancel
-            </button>
+            {editingHotelId && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="bg-gray-400 text-white px-4 py-2 rounded-md w-full sm:w-auto"
+              >
+                Cancel
+              </button>
+            )}
           </div>
         </form>
-      )}
 
-      {/* Hotel List */}
-      {!isFormVisible && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {filteredHotels.map((hotel) => (
-            <div
-            key={hotel._id}
-            className="bg-white border border-gray-200 rounded-lg shadow-md  flex flex-col h-full overflow-hidden transform hover:scale-[1.03] transition-transform duration-300"
-          >
-            <div className="relative w-full h-48">
-              {hotel.photos.length > 0 && (
-                <PlaceImg place={hotel} className="w-full h-full object-cover" />
-              )}
-            </div>
-            <div className="p-6 flex flex-col grow">
-              <h3 className="text-xl font-semibold text-indigo-600">{hotel.name}</h3>
-              <p className="text-sm text-gray-600 mt-2">{hotel.address}</p>
-          
-              <div className="mt-4 flex flex-col justify-between flex-grow">
-                <p className="text-sm text-gray-700">
-                  <strong>Amenities:</strong> {hotel.amenities.join(", ")}
-                </p>
-                <p className="text-sm text-gray-700">
-                  <strong>Price:</strong> ${hotel.pricePerNight} / night
-                </p>
-                <p className="text-sm text-gray-700">
-                  <strong>Available Rooms:</strong> {hotel.availableRooms}
-                </p>
+        {/* Hotel List */}
+        <div className="space-y-4">
+          {filteredHotels.length === 0 ? (
+            <p className="text-gray-600 text-center sm:text-left">No hotels found.</p>
+          ) : (
+            filteredHotels.map((hotel) => (
+              <div key={hotel._id} className="bg-white p-4 rounded-md shadow-md">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="w-24 h-24">
+                      <PlaceImg
+                        hotel={hotel}
+                        index={0}
+                        className="object-cover w-full h-full rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold">{hotel.name}</h3>
+                      <p className="text-sm text-gray-600 mb-1 truncate">{hotel.description}</p>
+                      <p className="text-sm text-green-700 font-semibold">₹{hotel.price}</p>
+                      <div className="flex flex-wrap gap-1 mt-1 text-xs text-gray-500">
+                        {hotel.amenities?.map((a, i) => (
+                          <span key={i} className="bg-gray-100 px-2 py-1 rounded-full">{a}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-4 sm:mt-0">
+                    <button
+                      onClick={() => handleEdit(hotel)}
+                      className="bg-yellow-500 text-white px-3 py-1 rounded-md text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(hotel._id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded-md text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          
-            {/* Buttons at the bottom */}
-            <div className="flex justify-between items-center p-4 mt-auto border-t border-gray-200">
-              <button
-                onClick={() => handleEditHotel(hotel)}
-                className="text-indigo-600 hover:text-indigo-800 focus:outline-none"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDeleteHotel(hotel._id)}
-                className="text-red-600 hover:text-red-800 focus:outline-none"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-          
-           
-          ))}
+            ))
+          )}
         </div>
-      )}
-    </div>
+      </div>
     </div>
   );
 };
