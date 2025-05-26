@@ -134,7 +134,7 @@ const HomePage = () => {
             ))
           ) : (
             <div className="text-center text-gray-500 col-span-full">
-              No hotels match your search.
+              No hotel match your search.
             </div>
           )}
         </div>
