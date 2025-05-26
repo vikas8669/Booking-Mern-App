@@ -17,7 +17,7 @@ export default function PhotosUploader({ addedPhotos = [], onChange }) {
     try {
       setIsUploading(true);
       const { data: filename } = await axios.post(
-        `${API_URL}/api/upload-by-link/`,
+        `${API_URL}/api/upload`,
         { link: photoLink }
       );
       onChange([...addedPhotos, filename]);
