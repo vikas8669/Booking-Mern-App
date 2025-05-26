@@ -183,8 +183,8 @@ const HotelsPage = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-    <div className="max-w-7xl mx-auto ">
+    <div className="min-h-screen bg-gray-100 py-8 px-2">
+    <div className="max-w-7xl mx-auto text-center ">
       <AdminDashboard/>
       <h1 className="text-3xl font-bold mb-6 text-center">Manage Hotels</h1>
 
@@ -220,12 +220,12 @@ const HotelsPage = () => {
       </div>
 
       {/* Amenities Filter */}
-      <div className="flex justify-center space-x-4 mb-6">
+      <div className="flex justify-center space-x-2  m-4">
         {["Free WiFi", "Pool", "Parking", "Restaurant"].map((amenity) => (
           <button
             key={amenity}
             onClick={() => handleAmenitiesFilter(amenity)}
-            className={`p-3 rounded-full border ${selectedAmenities.includes(amenity) ? "bg-indigo-600 text-white" : "bg-white text-indigo-600"}`}
+            className={`p-[9px] rounded-full border ${selectedAmenities.includes(amenity) ? "bg-indigo-600 text-white" : "bg-white text-indigo-600"}`}
           >
             {amenity}
           </button>
@@ -236,7 +236,7 @@ const HotelsPage = () => {
       {!isFormVisible && (
         <button
           onClick={handleCreateHotel}
-          className="mb-6 py-3 px-6 bg-indigo-600 text-white rounded-full shadow-md hover:bg-indigo-700 transition-all duration-300"
+          className="mb-6 py-3 px-6 bg-indigo-600 text-white text center rounded-full shadow-md hover:bg-indigo-700 transition-all duration-300"
         >
           Create New Hotel
         </button>
