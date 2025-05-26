@@ -17,7 +17,7 @@ const PlacesPage = () => {
     const fetchPlaces = async () => {
       try {
         const { data } = await axios.get(
-          "http://localhost:5000/api/hotels/user-places",
+          "https://booking-mern-app-724u.onrender.com/api/hotels/user-places",
           {
             withCredentials: true,
           }
