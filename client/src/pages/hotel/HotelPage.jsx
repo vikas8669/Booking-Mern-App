@@ -4,7 +4,7 @@ import axios from "axios";
 import BookingWidget from "../../components/BookingWidget";
 import HotelGallery from "../../components/HotelGallery";
 import AddressLink from "../../components/AddressLink";
-import HotelRating from '../../components/Rating';
+// import HotelRating from '../../components/Rating';
 import { API_URL } from "../../Config";
 
 const HotelPage = () => {
@@ -29,12 +29,12 @@ const HotelPage = () => {
         <AddressLink>{hotel.address}</AddressLink>
 
         {/* Rating */}
-        <div className="my-4 ">
+        {/* <div className="my-4 ">
           <div className="bg-white px-6 py-4 rounded-xl shadow-sm w-full max-w-md">
             <h2 className="text-xl font-semibold mb-2">Hotel Rating</h2>
             <HotelRating hotelId={hotel._id} />
           </div>
-        </div>
+        </div> */}
 
         {/* Gallery */}
         <HotelGallery hotel={hotel} />
