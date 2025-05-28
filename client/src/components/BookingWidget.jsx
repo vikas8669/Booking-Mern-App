@@ -20,7 +20,7 @@ export default function BookingWidget({ hotel }) {
 
   const [redirect, setRedirect] = useState('');
   const [error, setError] = useState('');
-
+  
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
@@ -63,101 +63,126 @@ export default function BookingWidget({ hotel }) {
     });
   }
 
-  async function bookThisPlace() {
-    const res = await loadRazorpayScript();
-    if (!res) {
-      alert("Razorpay SDK failed to load. Check your internet connection.");
-      return;
-    }
-
-    if (!user) {
-      alert("Please log in to book this place.");
-      setRedirect('/login');
-      return;
-    }
-
-    if (!formData.checkIn || !formData.checkOut || numberOfNights <= 0) {
-      setError("Invalid check-in or check-out dates.");
-      return;
-    }
-
-    if (!formData.name || !formData.phone) {
-      setError("Name and phone number are required.");
-      return;
-    }
-
-    if (formData.numberOfGuests < 1) {
-      setError("Number of guests must be at least 1.");
-      return;
-    }
-
-    const totalPrice = numberOfNights * hotel.pricePerNight * formData.numberOfRooms;
-
-    try {
-      const backendResponse = await axios.post(`${API_URL}/api/razorpay/order`, {
-        amount: totalPrice * 100,
-        currency: "INR",
-      });
-
-      const { amount, id: order_id, currency } = backendResponse.data;
-
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: amount.toString(),
-        currency: currency,
-        name: "WanderLust",
-        description: "Booking Payment",
-        order_id: order_id,
-        handler: async function (response) {
-          try {
-            const verificationRes = await axios.post(`${API_URL}/api/razorpay/verify`, {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              userId: user._id,
-              hotelId: hotel._id,
-              roomType: formData.roomType,
-              checkInDate: formData.checkIn,
-              checkOutDate: formData.checkOut,
-              numberOfRooms: formData.numberOfRooms,
-              totalPrice: totalPrice,
-              guests: formData.numberOfGuests,
-              specialRequests: formData.specialRequests || "",
-              phone: formData.phone,
-            });
-
-            if (verificationRes.data.success) {
-              alert("Payment successful and booking created!");
-              setRedirect(`/account/bookings/${verificationRes.data.booking._id}`);
-            } else {
-              alert("Payment verification failed.");
-            }
-          } catch (error) {
-            console.error("Payment handler error:", error);
-            alert("Payment verification failed. Please try again.");
-          }
-        },
-        prefill: {
-          name: formData.name,
-          email: user?.email || "guest@example.com",
-          contact: formData.phone,
-        },
-        notes: {
-          address: "JCT Thapar Colony",
-        },
-        theme: {
-          color: "#3399cc",
-        },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-
-    } catch (error) {
-      console.error("Failed to create Razorpay order:", error);
-      setError("Failed to initiate payment. Please try again.");
-    }
+ async function bookThisPlace() {
+  const res = await loadRazorpayScript();
+  if (!res) {
+    alert("Razorpay SDK failed to load. Check your internet connection.");
+    return;
   }
+
+  if (!user) {
+    alert("Please log in to book this place.");
+    setRedirect('/login');
+    return;
+  }
+
+  // Date validations
+  const today = new Date().setHours(0, 0, 0, 0);
+  const checkInDate = new Date(formData.checkIn).setHours(0, 0, 0, 0);
+  const checkOutDate = new Date(formData.checkOut).setHours(0, 0, 0, 0);
+
+  if (!formData.checkIn || !formData.checkOut || checkInDate < today || checkOutDate <= checkInDate) {
+    setError("Please select valid check-in and check-out dates.");
+    return;
+  }
+
+  // Name validation
+  if (formData.name.trim().length < 2) {
+    setError("Please enter a valid name.");
+    return;
+  }
+
+  // Phone number validation (Indian format)
+  const phoneRegex = /^[6-9]\d{9}$/;
+  if (!phoneRegex.test(formData.phone)) {
+    setError("Please enter a valid 10-digit phone number.");
+    return;
+  }
+
+  // Guest and room validation
+  if (formData.numberOfGuests < 1) {
+    setError("Number of guests must be at least 1.");
+    return;
+  }
+
+  if (formData.numberOfRooms < 1) {
+    setError("Number of rooms must be at least 1.");
+    return;
+  }
+
+  const numberOfNights =
+    formData.checkIn && formData.checkOut
+      ? differenceInCalendarDays(new Date(formData.checkOut), new Date(formData.checkIn))
+      : 0;
+
+  const totalPrice = numberOfNights * hotel.pricePerNight * formData.numberOfRooms;
+
+  try {
+    const backendResponse = await axios.post(`${API_URL}/api/razorpay/order`, {
+      amount: totalPrice *100,
+      currency: "INR",
+    });
+
+    const { amount, id: order_id, currency } = backendResponse.data;
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: amount.toString(),
+      currency: currency,
+      name: "WanderLust",
+      description: "Booking Payment",
+      order_id: order_id,
+      handler: async function (response) {
+        try {
+          const verificationRes = await axios.post(`${API_URL}/api/razorpay/verify`, {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+            userId: user._id,
+            hotelId: hotel._id,
+            roomType: formData.roomType,
+            checkInDate: formData.checkIn,
+            checkOutDate: formData.checkOut,
+            numberOfRooms: formData.numberOfRooms,
+            totalPrice: totalPrice,
+            guests: formData.numberOfGuests,
+            specialRequests: formData.specialRequests || "",
+            phone: formData.phone,
+          });
+
+          if (verificationRes.data.success) {
+            alert("Payment successful and booking created!");
+            setRedirect(`/account/bookings/${verificationRes.data.booking._id}`);
+          } else {
+            alert("Payment verification failed.");
+          }
+        } catch (error) {
+          console.error("Payment handler error:", error);
+          alert("Payment verification failed. Please try again.");
+        }
+      },
+      prefill: {
+        name: formData.name,
+        email: user?.email || "guest@example.com",
+        contact: formData.phone,
+      },
+      notes: {
+        address: "JCT Thapar Colony",
+      },
+      theme: {
+        color: "#3399cc",
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+
+  } catch (error) {
+    console.error("Failed to create Razorpay order:", error);
+    setError("Failed to initiate payment. Please try again.");
+  }
+}
+
 
   return (
     <div className="bg-white shadow-lg rounded-2xl p-6 max-w-lg mx-auto mt-10">
